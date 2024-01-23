@@ -14,6 +14,7 @@ import HomeComments from "./HomeComments";
 
 function Post({ post, content , post_image, post_date,  post_owner, post_id, username, votes, comments}) {
   const [userInfo, setUserInfo] = useState('');
+  const [likesCount, setLikesCount] = useState('');
   const [liked, setLiked] = useState(false);
   const [isCommentsOpen, setCommentsPopup] = useState(false);
 
@@ -31,16 +32,17 @@ function Post({ post, content , post_image, post_date,  post_owner, post_id, use
   // this.state.post_id = post_id;
   // this.state.username = username;
 
+  // get the post owner
   const getPostOwner=() =>{
 
       console.log("get post owner");
       const authToken = localStorage.getItem("authToken");
   
       if (authToken) {
-        console.log(`http://localhost:8000/api/users/${post_owner}/`);
+        console.log(`${process.env.REACT_APP_WHO_WILL_URL}/api/users/${post_owner}/`);
 
         axios
-          .get(`http://localhost:8000/api/users/${post_owner}/`, {
+          .get(`${process.env.REACT_APP_WHO_WILL_URL}/api/users/${post_owner}/`, {
             headers: {
               Authorization: `Token ${authToken}`,
             },
@@ -61,6 +63,7 @@ function Post({ post, content , post_image, post_date,  post_owner, post_id, use
 
   useEffect(() => {
     getPostOwner(); // Fetch data when the component mounts
+    getPostLikes();
    }, []);
   
 
@@ -72,6 +75,38 @@ function Post({ post, content , post_image, post_date,  post_owner, post_id, use
   const handleCloseComments = () => {
     setCommentsPopup(false);
 }
+
+  const getPostLikes = () => {
+      // for the post, get the like count
+      const authToken = localStorage.getItem("authToken");
+      if (authToken) {
+        axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/votes/`, {
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                'Content-Type': "application/json"
+            }
+        })
+        .then((response) => {
+          // Handle the successful response here
+          console.log("REQUEST WORKING?");
+          var data = response.data;
+          var count = 0;
+          data.forEach(element => {
+            // for each object in the votes api, update the count
+              if(element.post === post_id) {
+                 count = count + 1;
+              }
+          });
+          setLikesCount(count);
+    
+        })
+        .catch((error) => {
+          // Handle any errors here
+          console.error("REQUEST NOT WORKING");
+        });
+    }
+
+  }
 
   
   //handle vote up 
@@ -90,7 +125,7 @@ function Post({ post, content , post_image, post_date,  post_owner, post_id, use
     console.log(postVote);
 
     if (authToken) {
-        axios.post('http://localhost:8000/api/votes/', postVote, {
+        axios.post(`${process.env.REACT_APP_WHO_WILL_URL}/api/votes/`, postVote, {
             headers: {
                 'Authorization': `Token ${authToken}`,
                 'Content-Type': "application/json"
@@ -117,6 +152,7 @@ function Post({ post, content , post_image, post_date,  post_owner, post_id, use
     return formattedDate;
   }
 
+  // need to be able to see likes on posts
 
     
   return (
@@ -133,6 +169,7 @@ function Post({ post, content , post_image, post_date,  post_owner, post_id, use
         <button onClick={handleLikeClick} id="like"> 
         <span role="img" className="heart" aria-label="Heart">{liked ? '❤️' : '🤍'}</span>
         </button>
+        <div className="likeNumber">{likesCount}</div>
         <button className="comments" onClick={handleCommentsClick}>Comments</button>
 
       </div>

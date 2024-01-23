@@ -8,9 +8,11 @@ import Friends from './pages/Friends';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Notifications from './pages/Notifications';
+import Standalone from './Components/StandalonePost';
 import Logout from './pages/Logout';
 import { ToastContainer } from 'react-toastify';
 
+// require('dotenv').config()
 function App() {
 
   // if username is also associated, we can route pathes to /friends/id ect
@@ -26,6 +28,8 @@ function App() {
         <Route path='/friends' Component={Friends}/>
         <Route path='/signup' Component={SignUp}/>
         <Route path='/notifications' Component={Notifications}/>
+        <Route path='/post' Component={Standalone}/>
+
       </Routes>
       <ToastContainer autoClose={3000} />
     </Router>

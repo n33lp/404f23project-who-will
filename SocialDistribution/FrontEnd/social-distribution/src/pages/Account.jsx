@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import './Account.css';
 import { FaGear, IconName } from "react-icons/fa6";
 import AddPost from './account/AddPost.jsx'
-import photo from '../images/free_profile_picture.png'; //need to import local images, I wonder how this will work for django database
 import Settings from './account/Settings';
 import EditPost from './account/EditPost.jsx';
 import DeletePost from './account/DeletePost.jsx';
@@ -36,6 +35,7 @@ class Account extends Component {
         currentPostVisibility: null,
         currentPasedData: null,
         postID: null,
+        profileImage: "https://reactjs.org/logo-og.png"
     };
 
     handleCommentsClick = (id) => {
@@ -66,6 +66,7 @@ class Account extends Component {
     }
 
     handleEditPost = (post) => {
+        console.log("handle editting**************");
         this.setState({ isEditPostOpen: true, postToEdit: post , currentPostVisibility: post.visibility});
     }
 
@@ -85,7 +86,7 @@ class Account extends Component {
             var actualID = Object.keys(IDtoFollow)[0];
             
             // get the data at /api/profiles/id to determine profile
-            axios.get(`http://localhost:8000/api/profiles/${actualID}/`, {
+            axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${actualID}/`, {
                 headers: {
 
                     'Authorization': `Token ${authToken}`,
@@ -107,7 +108,7 @@ class Account extends Component {
                 };
 
                 // update the 'add_follow_request' field via a custom view in the api
-                axios.put(`http://localhost:8000/api/profiles/${profileID}/`, postData, {
+                axios.put(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${profileID}/`, postData, {
                     headers: {
                         'Authorization': `Token ${authToken}`,
                     }
@@ -126,7 +127,7 @@ class Account extends Component {
                         "delete_following": "None"
                     };
                     // update the 'add_following' field via a custom view in the api
-                    axios.put(`http://localhost:8000/api/profiles/${currentUserID}/`, newPostData, {
+                    axios.put(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${currentUserID}/`, newPostData, {
                         headers: {
                             'Authorization': `Token ${authToken}`,
                         }
@@ -163,7 +164,6 @@ class Account extends Component {
         // And we want to remove viewedProfileUserID from the "following" field in /profiles/loggedInUsersID
 
         // IMPRORTANT: profileID NEEDS to equal userID or else everything will break
-        
         // works, but is very slow changing the buttons, w/e
 
         if(authToken) {
@@ -175,7 +175,7 @@ class Account extends Component {
             };
 
             // update the 'delete_follow_request' custom view ihe api
-            axios.put(`http://localhost:8000/api/profiles/${viewedProfileUserID}/`, putData, {
+            axios.put(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${viewedProfileUserID}/`, putData, {
             headers: {
                 'Authorization': `Token ${authToken}`,
             }
@@ -188,7 +188,7 @@ class Account extends Component {
                     "delete_following": viewedProfileUserID
                 };
                 // update the 'delete_following' custom view ihe api
-                axios.put(`http://localhost:8000/api/profiles/${loggedInUsersID}/`, secondPutData, {
+                axios.put(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${loggedInUsersID}/`, secondPutData, {
                     headers: {
                         'Authorization': `Token ${authToken}`,
                     }
@@ -233,8 +233,8 @@ class Account extends Component {
 
     retrievePosts = () => {
         const authToken = localStorage.getItem("authToken");
-    
-        axios.get(`http://localhost:8000/api/posts/?owner=${this.state.ownerID}`, {
+
+        axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/posts/?owner=${this.state.ownerID}`, {
             headers: {
                 'Authorization': `Token ${authToken}`,
             }
@@ -248,11 +248,40 @@ class Account extends Component {
             this.setState({ error: "Error loading user data" });
         });
     }
-      
+
+    retrieveProfilePicture = (id) => {
+        const authToken = localStorage.getItem("authToken");
+        // if us, retrieve our profile image, else retrieve viewd profile id
+        axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${id}/`, {
+            headers: {
+                'Authorization': `Token ${authToken}`,
+            }
+        })
+        .then((res) => {
+            const userProfile = res.data;
+
+        const profileImage = userProfile.profile_image;
+        
+        console.log("Profile Image URL:", profileImage);
+
+        this.setState({ profileImage: profileImage });
+        })
+        .catch((err) => {
+            console.log(err);
+            this.setState({ error: "Error profile picture" });
+        });
+    }
+
+    
+  
     checkParams(){
         const queryParams = new URLSearchParams(window.location.search);
         const passedData = Object.fromEntries(queryParams.entries());
         this.state.viewedProfileUserID = Object.keys(passedData)[0];
+        //console.log("__+++++++++++++++++++++++")
+        //console.log(this.state.viewedProfileUserID);  // undefiend
+        //console.log(this.state.ownerID);
+        //console.log("__+++++++++++++++++++++++")
 
         if (this.state.viewedProfileUserID === undefined) {
             this.state.isMyAccount = true;
@@ -280,15 +309,52 @@ class Account extends Component {
         
     }
 
+    getViewedUsername = async () => {
+        const authToken = localStorage.getItem("authToken");
+        const queryParams = new URLSearchParams(window.location.search);
+        const passedData = Object.fromEntries(queryParams.entries());
+        if(isNotEmptyObject(passedData)) {
+            var actualID = Object.keys(passedData)[0];
+            if(authToken) {
+                axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/users/${actualID}/`, {
+                headers: {
+                    'Authorization': `Token ${authToken}`,
+                }
+                })
+                .then((res) => {
+                        var data = res.data;
+                        this.vUser = data.username;
+                        console.log(this.vUser);
+                    });
+            }
+            
+        }
+        else {
+            var localUser = localStorage.getItem("username");
+            this.vUser = localUser;
+        }
+
+
+    }
+
     componentDidMount() {
         this.retrievePosts();
+        this.getViewedUsername();
         this.state.ownerID = localStorage.getItem("pk");
-
         this.interval = setInterval(() => {
             this.retrievePosts();
         }, 5000);
 
-        
+        if (this.state.isMyAccount){
+            const id = localStorage.getItem('pk');
+            this.retrieveProfilePicture(id);
+        }
+        else {
+            const queryParams = new URLSearchParams(window.location.search);
+            const passedData = Object.fromEntries(queryParams.entries());
+            var actualID = Object.keys(passedData)[0];
+            this.retrieveProfilePicture(actualID);
+        }
     }
 
     componentWillUnmount(){
@@ -301,10 +367,13 @@ class Account extends Component {
         return formattedDate;
     }
 
+    forceNavigatePost = (id) => {
+        window.location.href = `/post?${id}`;
+    }
+
     render() {
 
         const queryParams = new URLSearchParams(window.location.search);
-
         const passedData = Object.fromEntries(queryParams.entries());
 
         if (passedData !== this.state.currentPassedData) {
@@ -321,14 +390,13 @@ class Account extends Component {
 
          // Check if we are currently following the viewed page
         // ID OF THE ACCOUNT WE WANT TO FOLLOW
-
         var actualID = Object.keys(passedData)[0];
 
         // This request checks, updates the profile viewed on state change to determine whether we are
         // following the viewed user or not
         if (this.isFollowing !== true && this.isFollowing !== false) {
             if(authToken) {
-                axios.get(`http://localhost:8000/api/profiles/${loggedInUsersID}/`, {
+                axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${loggedInUsersID}/`, {
                 headers: {
                     'Authorization': `Token ${authToken}`,
                 }
@@ -361,15 +429,20 @@ class Account extends Component {
         return (
             <div className="grid">
                 {/*Account Details*/}
+                <div className='usrName'>{this.vUser}'s Profile</div>
                 <div className="profile-picture">
-                    <img  src="https://reactjs.org/logo-og.png" alt="Profile" /> {/*temporary image*/}
+                    <img  src={this.state.profileImage} alt="Profile" /> {/*temporary image*/}
                 </div>
                 
                 <p className='username'>{user.username}</p>
                 
-                <button className="settings-icon" onClick={this.handleSettingsClick}>
-                    <FaGear/>
-                </button>
+                    {this.state.isMyAccount ? (
+                        <button className="settings-icon" onClick={this.handleSettingsClick}>
+                        <FaGear/>
+                        </button>
+                    ) : null}
+                  
+
                 {this.state.isSettingsOpen && (
                     <Settings onClose={this.handleCloseSettings} />
                 )}
@@ -399,14 +472,19 @@ class Account extends Component {
                 <div className="post-content">
                 {user.posts
                     .filter(post => {
-                        if (this.state.isMyAccount === true) {
-                            return this.state.ownerID ? post.owner === Number(this.state.ownerID) : true;
+                        if (this.state.isMyAccount === true) { // my account
+                            console.log("1");
+                            console.log(post.owner);
+                            console.log(this.state.ownerID);
+                            console.log(Number(this.state.ownerID));
+                            return this.state.ownerID ? post.owner === this.state.ownerID : true;
                         } 
                         else if (this.state.isFriend === true) {
-                            return this.state.ownerID ? (post.owner === Number(this.state.viewedProfileUserID) && (post.visibility === 'friends only' || post.visibility === 'public')) : true;
+                            console.log("2");
+                            return this.state.ownerID ? (post.owner === this.state.viewedProfileUserID && (post.visibility === 'friends only' || post.visibility === 'public')) : true;
                         } 
                         else {
-                            return this.state.ownerID ? post.owner === Number(this.state.viewedProfileUserID) && post.visibility === 'public' : true;
+                            return this.state.ownerID ? post.owner === this.state.viewedProfileUserID && post.visibility === 'public' : true;
                         }
                       })
                     .sort((a, b) => new Date(b.post_date_time) - new Date(a.post_date_time))
@@ -430,9 +508,11 @@ class Account extends Component {
                                 <button className="delete-post-button" onClick={() => this.handleDeletePost(post.id)}>Delete</button>
                             </>
                         )}
-                        
+                       
                         </div>
+                        <div className='postID' onClick={this.forceNavigatePost.bind(this,post.id)}>Post ID: {post.id}</div>
                     </div>
+                    
                     ))}
                 </div>
                 {this.state.isCommentsOpen && (

@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import ComposeModal from "../Components/Compose";
 import axios from "axios";
 import { toast } from "react-toastify";
+import './Notifications.css';
 
 // styled components
 const Container = styled.div`
@@ -22,6 +23,8 @@ const Container = styled.div`
   display: flex;
 `;
 
+// old sidebar: background-color: #3b3939;
+
 const SideBar = styled.div`
   width: 15%;
   height: 100vh;
@@ -29,7 +32,9 @@ const SideBar = styled.div`
   text-align: center;
   align-items: baseline;
   justify-content: center;
-  background-color: #3b3939;
+  background: radial-gradient(circle, rgb(255, 255, 255) 0%, rgb(21, 205, 252) 100%);
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+
   flex-direction: row;
   /* select all children to give margin */
   & > * {
@@ -74,10 +79,9 @@ const MessageContainer = styled.div`
 `;
 
 const Request = styled.div`
-  width: 80vw;
+  width: 50px;
   height: 9%;
   display: flex;
-  border: 1px solid black;
   margin: 5px;
   border-radius: 5px;
   align-items: center;
@@ -89,7 +93,7 @@ const Request = styled.div`
 
 const InboxMessage = styled.div`
   width: 25vw;
-  height: 9%;
+  height: 15%;
   display: flex;
   flex-direction: column;
   border: 1px solid black;
@@ -176,7 +180,7 @@ const RenderRequest = ({ requests, onClick }) => {
     }
     // console.log(data);
     axios
-      .put(`http://127.0.0.1:8000/api/profiles/${currentID}/`, data)
+      .put(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${currentID}/`, data)
       .then((res) => {
         console.log(res);
         if (choice === "accept") {
@@ -190,7 +194,7 @@ const RenderRequest = ({ requests, onClick }) => {
       });
     axios
       .put(
-        `http://127.0.0.1:8000/api/profiles/${handleUser["profile_id"]}/`,
+        `${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${handleUser["profile_id"]}/`,
         otherData
       )
       .then((res) => {
@@ -304,7 +308,12 @@ const RenderMessage = ({ message }) => {
   );
 };
 
+
+
+
 const Notifications = () => {
+  const [reqList, setReq] = useState([]);
+  const [idList, setId] =  useState([]);
   const [activeSection, setActiveSection] = useState("inbox");
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [requestList, setRequestList] = useState([]);
@@ -312,6 +321,7 @@ const Notifications = () => {
   const [pendingUser, setPendingUser] = useState([]);
   const [clickStatus, setClickStatus] = useState(false);
   const [inbox, setInbox] = useState([]);
+
   // updating requesting list
 
   useEffect(() => {
@@ -320,13 +330,42 @@ const Notifications = () => {
       const authToken = localStorage.getItem("authToken");
       // get requests list
       await axios
-        .get(`http://127.0.0.1:8000/api/profiles/${currentId}/`, {
+        .get(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${currentId}/`, {
           headers: {
             Authorization: `Token ${authToken}`,
           },
         })
         .then((res) => {
-          // console.log(res);
+          var data = res.data;
+        
+          // works
+          var actualDifference = data.follow_requests.filter(request => data.following.includes(request));
+          setId(actualDifference);
+          // make the id's usernames. use the useState method
+          var userNameList = []; 
+          actualDifference.forEach(element => {
+            console.log("fuck me");
+            console.log(element);
+            axios.get(`${process.env.REACT_APP_WHO_WILL_URL}/api/profiles/${element}/`, {
+              headers: {
+                Authorization: `Token ${authToken}`,
+              },
+            })
+            .then((res) => {
+              var dataTwo = res.data;
+              var usr = data.owner;
+              userNameList.push(usr);
+            })
+
+          });
+          //works
+          console.log(userNameList);
+          setReq(userNameList);
+
+
+
+
+
           setRequestList(res.data["follow_requests"]);
           setFollowingList(res.data["following"]);
         })
@@ -334,16 +373,13 @@ const Notifications = () => {
           console.log(err);
         });
 
-      // get all requesting users
+      // get all users who are following us but not us following them
       var difference = requestList.filter(
         (item) => !followingList.includes(item)
       );
+      
       await axios
-        .get(`http://127.0.0.1:8000/api/get_requesters/`, {
-          params: {
-            ids: `[${difference}]`,
-          },
-        })
+        .get(`${process.env.REACT_APP_WHO_WILL_URL}/api/get_requesters/?id=${currentId}`)
         .then((res) => {
           // console.log(res.data);
           setPendingUser(res.data);
@@ -355,7 +391,7 @@ const Notifications = () => {
       const userName = localStorage.getItem("username");
       console.log(userName);
       axios
-        .get(`http://127.0.0.1:8000/service/authors/${userName}/inbox`)
+        .get(`${process.env.REACT_APP_WHO_WILL_URL}/service/authors/${currentId}/inbox`)
         .then((res) => {
           console.log(res.data["items"]);
           setInbox(res.data["items"]);
@@ -384,6 +420,15 @@ const Notifications = () => {
     event.preventDefault();
     setClickStatus(!clickStatus);
   };
+
+  const navigateToProfile = (idlist, index) => {
+    var profileToVisit = idList[index];
+    // i dont think the id is what i want lol...
+    window.location.href = `/account?${profileToVisit}`;
+  }
+  
+
+
 
   console.log(inbox);
   return (
@@ -422,6 +467,20 @@ const Notifications = () => {
           <p style={{ color: "white", margin: "5px" }}>Friend Request</p>
         </Tile>
       </SideBar>
+
+      {/*<div className="test">{reqList}</div>*/}
+      {
+      /*
+      <div className="notifRowsTotal">
+      {reqList.map((item, index) => (
+        <div key={index} className={`notifRow-${index}`}>
+          {item} has followed you!
+          <button className="viewProfile" onClick={() => navigateToProfile(idList, index)}>View Profile</button>
+        </div>
+      ))}
+      </div>
+      */
+      }
       {/* for inbox */}
       {activeSection === "inbox" && <RenderInBox inbox={inbox} />}
       {/* {activeSection === "inbox" && <Message>inbox message</Message>} */}

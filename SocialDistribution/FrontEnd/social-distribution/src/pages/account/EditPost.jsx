@@ -57,10 +57,11 @@ class EditPost extends Component {
         const postToEdit = this.props.postToEdit;
 
         const primaryKey = localStorage.getItem("pk");
-
+        console.log("hello"+primaryKey); // 3c11192-7ed8-4081-8827-af44db15485e  ( id for profile)
+        console.log("hello2"+postToEdit); // 24e5c965b-e686-4d8a-a0a4-1cd5627f41e9 (post id)
         //Note if you change the initial size of this, you must change the end check!
         const editedPost = {
-            id: postToEdit.id,
+            id: postToEdit,
             owner: primaryKey,
         };
 
@@ -116,14 +117,14 @@ class EditPost extends Component {
             return;
         }
 
-        this.sendEditPostData(postToEdit.id, editedPost);
+        this.sendEditPostData(postToEdit, editedPost);
         this.closeModal();
     };
 
     sendEditPostData = (postId, editedPostData) => {
         const authToken = localStorage.getItem("authToken"); // Use localStorage.getItem() to get the authToken
         if (authToken) {
-            axios.patch(`http://localhost:8000/api/posts/${postId}/`, editedPostData, {
+            axios.patch(`${process.env.REACT_APP_WHO_WILL_URL}/api/posts/${postId}/`, editedPostData, {
                 headers: {
                     'Authorization': `Token ${authToken}`,
                     'Content-Type': 'application/json'

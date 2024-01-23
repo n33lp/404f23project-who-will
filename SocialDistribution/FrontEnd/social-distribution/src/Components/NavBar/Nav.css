@@ -1,0 +1,35 @@
+.actionSearch:hover {
+    color: black !important;
+}
+
+button.actionSearch:hover {
+    background-color:  #fff !important;
+}
+
+/* remove margin iff nav revert */
+.actionSearch {
+    background-color: #15cdfc;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    margin-top: 35px;
+    margin-left: -95px;
+    height: 25px !important;
+
+}
+
+
+.compName {
+    text-align: center;
+    color: #15cdfc;
+    background-color: black;
+    padding-top: 5px;
+    height: 35px;
+    /* start animation of logo */
+}
+
+.compName h3 {
+    font-size: 40px;
+    margin: 0;
+}
+
+

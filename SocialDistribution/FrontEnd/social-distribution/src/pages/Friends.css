@@ -41,7 +41,7 @@
     width: 100px; /* hacky, fix if need */
     display: flex;
     align-items: center;
-    
+    margin-right: 40px; 
 }
 
 .friendsTitle {
@@ -51,6 +51,7 @@
     font-weight: bold;
     background: rgb(255,255,255);
     background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(21,205,252,1) 100%);
-    
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
 
 }
